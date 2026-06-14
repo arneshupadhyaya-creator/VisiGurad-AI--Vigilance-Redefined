@@ -1,10 +1,105 @@
-When a normal picture is saved as a JPEG, the entire image gets compressed evenly. Every single pixel gets "squeezed" by the exact same amount.
+# MERN Stack Website
 
-But when someone edit an image (like changing numbers on a document, or pasting a face onto a body), that new part hasn't been compressed the same way as the rest of the picture. 
+## Overview
 
-This script takes the image and re-saves it at two different quality levels (95% and 70%). It then subtracts the new images from the original to see what changed. 
-Since edited parts react differently to being squeezed, they will stand out as BRIGHT,GLOWING SPOTS on a dark background.
+This project is a full-stack web application built using the **MERN Stack**.
 
+The application uses:
 
+* **MongoDB** for database management
+* **Express.js** for backend API development
+* **React.js (Vite)** for the frontend
+* **Node.js** as the backend runtime environment
+* **Tailwind CSS** for modern and responsive UI styling
 
+---
 
+## Tech Stack
+
+### Frontend
+
+* React.js
+* Vite
+* Tailwind CSS
+
+### Backend
+
+* Node.js
+* Express.js
+
+### Database
+
+* MongoDB
+
+---
+
+## Features
+
+* Responsive user interface
+* Fast frontend development using Vite
+* REST API backend with Express.js
+* MongoDB database integration
+* Modular project structure
+* Full-stack MERN architecture
+
+---
+
+## Installation
+
+### Clone the Repository
+
+```bash
+git clone <your-repository-url>
+cd <project-folder>
+```
+
+---
+
+## Frontend Setup
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+---
+
+## Backend Setup
+
+```bash
+cd backend
+npm install
+npm start
+```
+
+---
+
+## Environment Variables
+
+Create a `.env` file inside the backend directory and add:
+
+```env
+MONGO_URI=your_mongodb_connection_string
+PORT=5000
+```
+
+---
+
+## Project Structure
+
+```bash
+project-root/
+│
+├── frontend/       # React + Vite + Tailwind CSS
+│
+├── backend/        # Express.js + Node.js API
+│
+└── README.md
+```
+
+---
+
+## Author
+
+Built using the MERN Stack with React.js, Vite, Tailwind CSS, Express.js, Node.js, and MongoDB.
