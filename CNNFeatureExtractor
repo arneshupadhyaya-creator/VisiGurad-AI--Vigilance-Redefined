@@ -1,0 +1,11 @@
+import torch
+import torch.nn as nn
+from torchvision import models
+
+resnet = models.resnet50(
+    pretrained=True
+)
+
+feature_extractor = nn.Sequential(
+    *list(resnet.children())[:-1]
+)
