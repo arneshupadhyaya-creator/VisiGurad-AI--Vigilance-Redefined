@@ -21,7 +21,9 @@ class SiameseNetwork(nn.Module):
         self.backbone = nn.Sequential(
             *list(resnet.children())[:-1]
         )
-
+                # Freezing ResNet50 weights
+        for param in self.backbone.parameters():
+        param.requires_grad = False
         
         # Embedding Layer
         
@@ -62,7 +64,12 @@ class SiameseNetwork(nn.Module):
         )
 
         x = self.embedding(x)
-
+        x = nn.functional.normalize(
+        x,
+        p=2,
+        dim=1
+    )
+        
         return x
 
    
