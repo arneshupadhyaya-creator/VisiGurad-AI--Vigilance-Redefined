@@ -3,7 +3,7 @@ import os
 
 # 1. Set your configurations up front
 image_path = "E:/CV/data/blur_test.png"
-threshold = 100.0  # Scores below this = blurry
+threshold = #800
 
 # 2. Load the image
 img = cv2.imread(image_path)
