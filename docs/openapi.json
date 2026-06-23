@@ -1,0 +1,396 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "VisiGuard AI - Forensic API Specification",
+    "description": "Production-ready digital forensics and document tamper-detection REST API surface.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000/api",
+      "description": "Local Development Server"
+    }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "Register a new user account",
+        "description": "Performs password complexity checks, salts and hashes user passwords using bcrypt, logs registration audits, and returns a signed bearer JWT session.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registration successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input credentials or email already registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many registration attempts (Rate Limit)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Authenticate user credentials",
+        "description": "Verifies user account, performs cryptographical password comparisons, generates standard JWT bearer token, and tracks audits.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Brute-force protection activated (Rate Limit)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "summary": "Retrieve logged-in user profile",
+        "description": "Decodes active bearer token and returns logged-in user metadata.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile loaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "success" },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "example": "64eff4b3d8..." },
+                        "email": { "type": "string", "example": "sanskar@visiguard.ai" },
+                        "role": { "type": "string", "example": "Security_Auditor" },
+                        "createdAt": { "type": "string", "format": "date-time", "example": "2026-06-24T00:00:00Z" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Missing or invalid Bearer JWT.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scan": {
+      "post": {
+        "summary": "Upload and run forensic analysis on a document",
+        "description": "Saves original image locally via the Storage Layer, runs Error Level Analysis (ELA) through the ML Python subprocess, updates MongoDB scan history, and returns computed tamper ratings.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "JPEG/PNG document image (Max 10MB)"
+                  }
+                },
+                "required": ["image"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Scan computed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unsupported image format or size exceedance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access attempt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scans": {
+      "get": {
+        "summary": "Fetch scan audit history",
+        "description": "Retrieves persistent forensic scans logged in MongoDB for the authenticated user account.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "History list loaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScanRecord"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scans/{id}": {
+      "delete": {
+        "summary": "Delete a forensic scan record",
+        "description": "Purges original and ELA images from storage medium, removes scan entries from MongoDB, and logs deletion audits.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "24-character hexadecimal MongoDB ObjectId",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Record and files purged successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "success" },
+                    "message": { "type": "string", "example": "Scan history and files deleted successfully." }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Scan audit record not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Provide 'Bearer <JWT>' header for authorized access."
+      }
+    },
+    "schemas": {
+      "RegisterRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "sanskar@visiguard.ai"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "example": "P@ssword123"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "sanskar@visiguard.ai"
+          },
+          "password": {
+            "type": "string",
+            "example": "P@ssword123"
+          }
+        }
+      },
+      "AuthSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "example": "success" },
+          "message": { "type": "string", "example": "Logged in successfully." },
+          "token": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR..." },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "example": "64eff4b3d8..." },
+              "email": { "type": "string", "example": "sanskar@visiguard.ai" },
+              "role": { "type": "string", "example": "Security_Auditor" },
+              "createdAt": { "type": "string", "format": "date-time", "example": "2026-06-24T00:00:00Z" }
+            }
+          }
+        }
+      },
+      "ScanSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "example": "success" },
+          "message": { "type": "string", "example": "Analysis completed successfully." },
+          "scan": {
+            "$ref": "#/components/schemas/ScanRecord"
+          },
+          "simulated": { "type": "boolean", "example": false },
+          "warning": { "type": "string", "example": "" }
+        }
+      },
+      "ScanRecord": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string", "example": "64f019bb..." },
+          "userId": { "type": "string", "example": "64eff4b3d8..." },
+          "originalName": { "type": "string", "example": "passport.jpg" },
+          "originalPath": { "type": "string", "example": "/uploads/image-1693452.jpg" },
+          "elaPath": { "type": "string", "example": "/uploads/ela-image-1693452.png" },
+          "fileSize": { "type": "integer", "example": 104230 },
+          "dimensions": { "type": "string", "example": "Standard" },
+          "threatScore": { "type": "number", "example": 42.5 },
+          "status": { "type": "string", "enum": ["Clean", "Suspicious", "Tampered"], "example": "Suspicious" },
+          "createdAt": { "type": "string", "format": "date-time", "example": "2026-06-24T00:10:00Z" }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "example": "fail" },
+          "error": { "type": "string", "example": "Not authorized, token verification failed." }
+        }
+      }
+    }
+  }
+}
