@@ -37,7 +37,7 @@ class ResNetFeatureExtractor:
 
         self.transform = transforms.Compose([
 
-            transforms.Resize((224, 224)),
+            transforms.Resize((512, 512)),
 
             transforms.ToTensor(),
 
