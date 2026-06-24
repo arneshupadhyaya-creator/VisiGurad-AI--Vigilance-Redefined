@@ -23,7 +23,7 @@ class SiameseNetwork(nn.Module):
         )
                 # Freezing ResNet50 weights
         for param in self.backbone.parameters():
-        param.requires_grad = False
+            param.requires_grad = False
         
         # Embedding Layer
         
