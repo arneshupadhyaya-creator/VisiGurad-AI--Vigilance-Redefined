@@ -25,7 +25,7 @@ class DocumentVerifier:
 
         self.transform = transforms.Compose([
 
-            transforms.Resize((224, 224)),
+            transforms.Resize((512, 512)),
 
             transforms.ToTensor(),
 
@@ -134,22 +134,59 @@ class DocumentVerifier:
         template_image,
         uploaded_image
     ):
-
-        similarity = self.similarity(
-            template_image,
+    
+        emb1 = self.get_embedding(
+            template_image
+        )
+    
+        emb2 = self.get_embedding(
             uploaded_image
         )
-
-        distance = self.distance(
-            template_image,
-            uploaded_image
+    
+        similarity = F.cosine_similarity(
+            emb1,
+            emb2
         )
-
+    
+        distance = F.pairwise_distance(
+            emb1,
+            emb2
+        )
+    
+        similarity = float(
+            similarity.item()
+        )
+    
+        distance = float(
+            distance.item()
+        )
+    
+        structural_score = round(
+            similarity * 100,
+            2
+        )
+    
+        if similarity >= 0.90:
+    
+            verdict = "AUTHENTIC"
+    
+        elif similarity >= 0.75:
+    
+            verdict = "SUSPICIOUS"
+    
+        else:
+    
+            verdict = "POSSIBLE FORGERY"
+    
         result = {
-
-            "similarity": similarity,
-
-            "distance": distance
+    
+            "structural_score": structural_score,
+    
+            "cosine_similarity": similarity,
+    
+            "euclidean_distance": distance,
+    
+            "verdict": verdict
         }
-
+    
         return result
