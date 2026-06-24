@@ -60,17 +60,7 @@ class SimilarityEngine:
         else:
             return "POSSIBLE FORGERY" 
     
-    @staticmethod
-    def explanation(cosine_score):
-
-        if cosine_score >= 0.90:
-            return "Document structure closely matches the reference template."
     
-        elif cosine_score >= 0.75:
-            return "Minor structural deviations detected."
-    
-        else:
-            return "Significant structural deviations detected."
             
             
     
