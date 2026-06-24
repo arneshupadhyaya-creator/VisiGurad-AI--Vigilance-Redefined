@@ -28,6 +28,8 @@ class ResNetFeatureExtractor:
         self.model = nn.Sequential(
             *list(resnet.children())[:-1]
         )
+        for param in self.model.parameters():
+            param.requires_grad = False
 
         self.model.eval()
 
