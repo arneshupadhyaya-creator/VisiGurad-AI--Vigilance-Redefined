@@ -47,6 +47,7 @@ class SimilarityEngine:
         return round(
             confidence,
             2
+        )    
 
     @staticmethod
     def verdict(cosine_score):
