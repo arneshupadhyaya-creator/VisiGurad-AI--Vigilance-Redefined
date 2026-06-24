@@ -27,3 +27,50 @@ class SimilarityEngine:
         )
 
         return float(distance.item())
+
+    @staticmethod
+    def structural_score(cosine_score):
+
+        return round(
+            cosine_score * 100,
+            2
+        )
+
+    @staticmethod
+    def confidence_score(cosine_score):
+
+        confidence = max(
+            0,
+            min(cosine_score * 100, 99.9)
+        )
+
+        return round(
+            confidence,
+            2
+
+    @staticmethod
+    def verdict(cosine_score):
+
+        if cosine_score >= 0.90:
+            return "AUTHENTIC"
+
+        elif cosine_score >= 0.75:
+            return "SUSPICIOUS"
+
+        else:
+            return "POSSIBLE FORGERY" 
+    
+    @staticmethod
+    def explanation(cosine_score):
+
+        if cosine_score >= 0.90:
+            return "Document structure closely matches the reference template."
+    
+        elif cosine_score >= 0.75:
+            return "Minor structural deviations detected."
+    
+        else:
+            return "Significant structural deviations detected."
+            
+            
+    
