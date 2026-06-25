@@ -87,7 +87,7 @@ if __name__ == "__main__":
 
     # Device configuration
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"Using device: {device}")
+    #print(f"Using device: {device}")
 
     # Data Initialization
     dataset = BehaviorSequenceDataset(num_samples=200, seq_length=SEQ_LENGTH, feature_dim=FEATURE_DIM)
@@ -95,12 +95,12 @@ if __name__ == "__main__":
 
     # Model, Loss, and Optimizer
     model = BehaviorLSTM(input_dim=FEATURE_DIM, hidden_dim=HIDDEN_DIM, num_layers=NUM_LAYERS).to(device)
-    criterion = nn.MSELoss()  # Mean Squared Error since outputs are in range of 0.0 to 100.0
+    criterion = nn.MSELoss()  # Binary Cross Entropy since outputs are restricted to [0,1]
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
     # Simple Training Loop
     model.train()
-    print("--- Starting Training ---")
+    #print("--- Starting Training ---")
     for epoch in range(EPOCHS):
         epoch_loss = 0.0
         for batch_x, batch_y in dataloader:
@@ -121,7 +121,7 @@ if __name__ == "__main__":
 
     # --- Inference Module / Multimodal Integration ---
     model.eval()
-    print("\n--- Running Inference for Multimodal Pipeline ---")
+    #print("\n--- Running Inference for Multimodal Pipeline ---")
     
     # Simulating a single active user session window
     # Shape: (1 sample, 30 time-steps, 4 features)
