@@ -23,4 +23,5 @@ def normalize_and_save_npy(image_path, output_path, target_size=(224, 224)):
     
     return img_normalized
 
+
 # img_array = normalize_and_save_npy('image.jpg', 'normalized_image.npy')
