@@ -19,7 +19,7 @@ class BehaviorSequenceDataset(Dataset):
         self.X = np.random.randn(num_samples, seq_length, feature_dim).astype(np.float32)
         
         # Target scores between 0 (highly irregular/abnormal) and 1 (normal user baseline)
-        self.y = np.random.uniform(0.0, 1.0, (num_samples, 1)).astype(np.float32)
+        self.y = np.random.uniform(0.0, 100.0, (num_samples, 1)).astype(np.float32)
 
     def __len__(self):
         return len(self.X)
@@ -68,7 +68,7 @@ class BehaviorLSTM(nn.Module):
         last_time_step = out[:, -1, :]
         
         # Compute behavioral score
-        score = self.fc(last_time_step)
+        score = self.fc(last_time_step) * 100.0
         return score
 
 
@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
     # Model, Loss, and Optimizer
     model = BehaviorLSTM(input_dim=FEATURE_DIM, hidden_dim=HIDDEN_DIM, num_layers=NUM_LAYERS).to(device)
-    criterion = nn.BCELoss()  # Binary Cross Entropy since outputs are restricted to [0,1]
+    criterion = nn.MSELoss()  # Mean Squared Error since outputs are in range of 0.0 to 100.0
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
     # Simple Training Loop
