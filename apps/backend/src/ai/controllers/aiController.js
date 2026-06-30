@@ -34,7 +34,9 @@ class AIController {
 
   async getStatus(req, res, next) {
     try {
-      const health = monitoringService.getHealthMetrics();
+      const aiInferenceService = require('../services/aiInferenceService');
+      const pythonStatus = await aiInferenceService.getPythonServiceStatus();
+      const health = pythonStatus || monitoringService.getHealthMetrics();
       res.status(200).json({
         status: 'success',
         data: health

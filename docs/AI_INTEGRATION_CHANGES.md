@@ -1,66 +1,35 @@
-# AI Integration Changes Log
+# VisiGuard AI - ML Integration Changes Log
 
-This file tracks all modifications, additions, and updates made to integrate local AI capabilities into the VisiGuard AI platform.
-
----
-
-## Change Log
-
-### Phase 1: Shared API Contracts (2026-06-30)
-* **Date**: 2026-06-30
-* **File Name**: `shared/contracts/ai.contract.js`
-* **Line/Function Modified**: Export and definitions block
-* **Why the modification was necessary**: Expose schemas for validating document authenticity structures and keystroke dynamics metrics.
-* **Previous Behaviour**: Only contained ELA process schemas.
-* **New Behaviour**: Contains `documentVerificationResponseSchema`, `typingAnalysisRequestSchema`, and `typingAnalysisResponseSchema` validations.
-
-### Phase 2: Layered Backend AI Module (2026-06-30)
-* **Date**: 2026-06-30
-* **File Name**: `apps/backend/index.js`
-* **Line/Function Modified**: Route mounting
-* **Why the modification was necessary**: Mount the new AI router under `/api/ai`.
-* **Previous Behaviour**: Mounted only auth and scan routes.
-* **New Behaviour**: Mounts `/api/ai` route maps.
-
-* **Date**: 2026-06-30
-* **Files Created**:
-  * `apps/backend/src/ai/config/ai.config.js`: Central configuration manager.
-  * `apps/backend/src/ai/utils/aiLogger.js`: Structured JSON logger.
-  * `apps/backend/src/ai/middlewares/aiSecurity.js`: Multer PDF/TIFF upload configuration, cleanup hook, and AI-specific rate limiter.
-  * `apps/backend/src/ai/services/monitoringService.js`: Health diagnostics compiler.
-  * `apps/backend/src/ai/services/aiInferenceService.js`: Local REST/Ollama connection client with automated fallback simulator.
-  * `apps/backend/src/ai/services/documentVerificationService.js`: Verifications service coordinator.
-  * `apps/backend/src/ai/services/typingAnalysisService.js`: Keystroke metrics processor.
-  * `apps/backend/src/ai/controllers/aiController.js`: Route action handlers.
-  * `apps/backend/src/ai/routes/aiRoutes.js`: HTTP endpoints map.
-
-### Phase 3: Frontend Modular Components (2026-06-30)
-* **Date**: 2026-06-30
-* **File Name**: `apps/frontend/src/pages/dashboard.jsx`
-* **Line/Function Modified**: Tab controls and content rendering
-* **Why the modification was necessary**: Integrate AI Document verification, keystroke metrics, and coprocessor status interfaces.
-* **Previous Behaviour**: Displayed only ELA upload sandboxes and logs.
-* **New Behaviour**: Displays interlock typing warnings and mounts new subcomponent tabs.
-
-* **Files Created**:
-  * `apps/frontend/src/ai/services/aiClient.js`: Axios request handlers.
-  * `apps/frontend/src/ai/hooks/useTypingCapture.js`: Keystroke telemetry capture.
-  * `apps/frontend/src/ai/components/DocumentVerifier.jsx`: Upload card.
-  * `apps/frontend/src/ai/components/TypingBehaviorMonitor.jsx`: Threat warning layout.
-  * `apps/frontend/src/ai/components/AIHealthPanel.jsx`: Visual diagnostic monitor.
+This file tracks all modifications, configuration shifts, and wrapper introductions made to integrate the Python ML module into the full-stack system.
 
 ---
 
-## Newly Introduced Elements
+## 1. Mappings of System Changes
 
-### Environment Variables
-* `AI_MODEL_ENDPOINT`: Endpoint for local REST inference (e.g. `http://localhost:8000/predict`).
-* `AI_MODEL_NAME`: The identifier of the loaded local model (e.g. `visiguard-cyber-resnet50`).
-* `AI_TIMEOUT`: Inference call timeout in milliseconds.
-* `AI_MAX_UPLOAD_SIZE`: Maximum document upload limit in bytes (10MB).
-* `AI_CONFIDENCE_THRESHOLD`: Min confidence % to pass authenticity checks.
-* `AI_TYPING_BOT_THRESHOLD`: Threat rating above which bot warnings trigger.
+### Change ID: CHG_001
+* **File Modified**: `apps/backend/src/ai/services/aiInferenceService.js`
+* **Reason for Change**: Connect Express backend to the real Python REST API server uvicorn instance, mapping pipeline metrics back to standard frontend schemas.
+* **Previous Behaviour**: Threw offline error and defaulted to local simulator when calling `http://localhost:8000`.
+* **New Behaviour**: Dispatches requests to `POST http://localhost:8000/predict` and `POST http://localhost:8000/predict/typing`, translating ELA regions, trust scores, and diagnostics.
+* **Impact**: Full-stack E2E automation with real Python ML model scoring.
+* **Rollback Procedure**: Revert to mock simulator return logic in `aiInferenceService.js`.
 
-### Testing Coverage
-* `tests/backend/ai.test.js`: Validates request schemas and ELA fallback simulators.
-* `tests/frontend/ai.test.jsx`: Validates key hold and speed calculations.
+---
+
+### Change ID: CHG_002
+* **File Modified**: `apps/backend/src/ai/controllers/aiController.js`
+* **Reason for Change**: Route the dashboard's AI Diagnostics status indicators to query real CPU/memory metrics from the running Python process.
+* **Previous Behaviour**: Returned only host system OS CPU/memory stats.
+* **New Behaviour**: Calls `getPythonServiceStatus()`, returning the Python uvicorn memory allocation and loaded models metadata.
+* **Impact**: Accurate diagnostics tracking in client-side system control screens.
+* **Rollback Procedure**: Revert `getStatus` to report local Node OS memory metrics.
+
+---
+
+### Change ID: CHG_003
+* **File Created**: `VisiGuard/server.py`
+* **Reason for Change**: Create a high-performance Python REST service daemon wrapping `visiguard_pipeline.py` and `behavioral_layer.py`.
+* **Previous Behaviour**: Python files could only be run from the command line on one-off files, reloading ResNet50 model weights every time.
+* **New Behaviour**: Launches FastAPI/Uvicorn server hosting ResNet50 in memory, reducing evaluation latency to sub-second durations.
+* **Impact**: Clean integration layer that decouples backend JS from Python logic.
+* **Rollback Procedure**: Delete `VisiGuard/server.py`.

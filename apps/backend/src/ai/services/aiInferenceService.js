@@ -1,4 +1,5 @@
 const axios = require('axios');
+const path = require('path');
 const aiConfig = require('../config/ai.config');
 const aiLogger = require('../utils/aiLogger');
 const monitoringService = require('./monitoringService');
@@ -10,10 +11,9 @@ const monitoringService = require('./monitoringService');
  */
 class AIInferenceService {
   constructor() {
-    this.endpoint = aiConfig.modelEndpoint;
-    this.modelName = aiConfig.modelName;
-    this.timeout = aiConfig.timeout;
-    this.retries = aiConfig.retryAttempts;
+    this.endpoint = aiConfig.modelEndpoint || 'http://localhost:8000/predict';
+    this.timeout = aiConfig.timeout || 15000;
+    this.retries = aiConfig.retryAttempts || 3;
   }
 
   /**
@@ -29,29 +29,27 @@ class AIInferenceService {
 
     aiLogger.info('AI_REQUEST', `Initiating AI inference execution for: ${type}`, {
       type,
-      endpoint: this.endpoint,
-      modelName: this.modelName
+      endpoint: this.endpoint
     });
+
+    const targetUrl = type === 'typing' 
+      ? `${this.endpoint}/typing`
+      : this.endpoint;
+
+    let body = payload;
+    if (type === 'document') {
+      // Map frontend payload parameters to python server expected values
+      body = {
+        uploaded_path: payload.tempPath ? path.resolve(payload.tempPath) : '',
+        template_path: path.resolve('VisiGuard/data/official_template.jpg'),
+        behavioral_score: 75.0
+      };
+    }
 
     while (attempt < this.retries) {
       attempt++;
       try {
-        // Prepare axios request with timeout
-        // In real execution, connect to Ollama/REST server:
-        // const response = await axios.post(`${this.endpoint}/${type}`, payload, { timeout: this.timeout });
-        
-        // Since this runs in a hackathon sandbox without real GPU endpoints active by default,
-        // we will simulate the connection check. If configured endpoint resolves, use it.
-        // Otherwise, throw connection error to activate the robust local simulator fallback.
-        if (this.endpoint.startsWith('http://localhost:8000') || this.endpoint.includes('DUMMY')) {
-          throw new Error('Connection refused (local REST server offline)');
-        }
-
-        const response = await axios.post(`${this.endpoint}`, {
-          model: this.modelName,
-          task: type,
-          data: payload
-        }, { timeout: this.timeout });
+        const response = await axios.post(targetUrl, body, { timeout: this.timeout });
 
         const duration = Date.now() - startTime;
         monitoringService.recordRequest(duration);
@@ -62,7 +60,12 @@ class AIInferenceService {
           durationMs: duration
         });
 
-        return response.data;
+        // Parse result depending on type
+        if (type === 'document') {
+          return this.mapDocumentResult(response.data.data, payload.originalName);
+        } else {
+          return response.data.data;
+        }
       } catch (err) {
         lastError = err;
         aiLogger.warn('AI_RETRY', `Inference request failed on attempt ${attempt}`, {
@@ -87,13 +90,67 @@ class AIInferenceService {
   }
 
   /**
+   * Fetch health diagnostics directly from Python REST service.
+   */
+  async getPythonServiceStatus() {
+    try {
+      const statusUrl = this.endpoint.replace('/predict', '/status');
+      const response = await axios.get(statusUrl, { timeout: 2000 });
+      if (response.data && response.data.status === 'success') {
+        return response.data.data;
+      }
+    } catch (err) {
+      aiLogger.warn('PYTHON_STATUS_OFFLINE', 'Could not query status endpoint from Python server', {
+        error: err.message
+      });
+    }
+    return null;
+  }
+
+  /**
+   * Map raw Python output format to UI expected schema contract.
+   */
+  mapDocumentResult(raw, originalName) {
+    const score = raw.master_trust_score;
+    const isTampered = score < 80;
+
+    // Map region list
+    const suspiciousRegions = (raw.ela_region_list || []).map(r => {
+      const [r0, c0, r1, c1] = r.bbox;
+      return {
+        x: c0,
+        y: r0,
+        width: c1 - c0,
+        height: r1 - r0,
+        reason: `${r.sev} severity tampering (density: ${roundFloat(r.mean, 2)})`
+      };
+    });
+
+    return {
+      authenticity: !isTampered,
+      confidence: score,
+      risk_score: parseFloat(((100 - score) / 100.0).toFixed(3)),
+      suspicious_regions: suspiciousRegions,
+      explanation: [
+        raw.ela_detail || 'Analysis completed.',
+        `OCR layout format consistency rating: ${raw.ocr_score}/100.`,
+        `Metadata layer signature score: ${raw.metadata_score}/100.`
+      ],
+      metadata_analysis: {
+        software: raw.software || 'unknown',
+        modifyDate: raw.datetime_modified || new Date().toISOString(),
+        format: originalName.split('.').pop()
+      },
+      tampering_detected: isTampered
+    };
+  }
+
+  /**
    * Mock Fallback Simulator
-   * Generates deterministic, valid contract responses for testing.
    */
   generateSimulatedInference(type, payload) {
     if (type === 'document') {
       const fileName = payload.originalName || 'unknown-doc.pdf';
-      // Deterministically mark file as authentic/tampered based on name to make tests predictable
       const isTampered = fileName.toLowerCase().includes('tampered') || fileName.toLowerCase().includes('fake');
       const hash = fileName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
       
@@ -121,7 +178,6 @@ class AIInferenceService {
     }
 
     if (type === 'typing') {
-      // Analyze typing metrics
       const wpm = payload.wpm || 60;
       const consistent = payload.consistency || 50;
       const pasteDetected = payload.pasteDetected || false;
@@ -158,6 +214,11 @@ class AIInferenceService {
 
     return { error: 'Unknown inference type' };
   }
+}
+
+function roundFloat(val, precision) {
+  if (typeof val !== 'number') return 0;
+  return parseFloat(val.toFixed(precision));
 }
 
 module.exports = new AIInferenceService();
