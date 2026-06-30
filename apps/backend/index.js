@@ -7,6 +7,7 @@ const fs = require('fs');
 const connectDB = require('./src/config/db');
 const authRoutes = require('./src/routes/authRoutes');
 const scanRoutes = require('./src/routes/scanRoutes');
+const aiRoutes = require('./src/ai/routes/aiRoutes');
 const errorHandler = require('./src/middlewares/errorMiddleware');
 const metricsService = require('./src/monitoring/metricsService');
 const logger = require('./src/utils/logger');
@@ -40,6 +41,7 @@ connectDB();
 // API Routes mounting
 app.use('/api/auth', authRoutes);
 app.use('/api', scanRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Catch-all route not found (404)
 app.use((req, res, next) => {

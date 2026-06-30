@@ -41,8 +41,57 @@ const aiProgressEventSchema = z.object({
   timestamp: z.string()
 });
 
+// --- NEW CYBERSECURITY AI CONTRACTS ---
+
+// Document verification response schema
+const documentVerificationResponseSchema = z.object({
+  authenticity: z.boolean(),
+  confidence: z.number().min(0).max(100),
+  risk_score: z.number().min(0).max(1),
+  suspicious_regions: z.array(z.object({
+    x: z.number(),
+    y: z.number(),
+    width: z.number(),
+    height: z.number(),
+    reason: z.string().optional()
+  })),
+  explanation: z.array(z.string()),
+  metadata_analysis: z.record(z.any()),
+  tampering_detected: z.boolean()
+});
+
+// Typing behavior analysis request metrics
+const typingAnalysisRequestSchema = z.object({
+  holdTime: z.number().nonnegative(),
+  flightTime: z.number(),
+  digraphLatency: z.number(),
+  trigraphLatency: z.number(),
+  typingSpeed: z.number().nonnegative(), // keys per minute or WPM
+  wpm: z.number().nonnegative(),
+  burstSpeed: z.number().nonnegative(),
+  variance: z.number().nonnegative(),
+  consistency: z.number().nonnegative(),
+  backspaceFrequency: z.number().nonnegative(),
+  idleTime: z.number().nonnegative(),
+  errorRate: z.number().nonnegative(),
+  pasteDetected: z.boolean(),
+  autoFillDetected: z.boolean()
+});
+
+// Typing behavior analysis response
+const typingAnalysisResponseSchema = z.object({
+  human_probability: z.number().min(0).max(1),
+  bot_probability: z.number().min(0).max(1),
+  risk_level: z.enum(['LOW', 'MEDIUM', 'HIGH', 'VERY_HIGH']),
+  explanation: z.string(),
+  confidence: z.number().min(0).max(100)
+});
+
 module.exports = {
   aiAnalysisRequestSchema,
   aiAnalysisResponseSchema,
-  aiProgressEventSchema
+  aiProgressEventSchema,
+  documentVerificationResponseSchema,
+  typingAnalysisRequestSchema,
+  typingAnalysisResponseSchema
 };

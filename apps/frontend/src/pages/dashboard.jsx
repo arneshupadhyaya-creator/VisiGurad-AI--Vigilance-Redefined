@@ -7,10 +7,16 @@ import { triggerAIModelCall } from '../services/ai/aiService';
 import { 
   UploadCloud, ShieldCheck, ShieldAlert, History, 
   Trash2, FileImage, Loader2, Play, ExternalLink, RefreshCw,
-  User, Database, Cpu, Activity
+  User, Database, Cpu, Activity, Sparkles, MessageSquare 
 } from 'lucide-react';
 import Navbar from '../components/navbar.jsx';
 import Footer from '../components/footer.jsx';
+
+// AI Integration imports
+import { useTypingCapture } from '../ai/hooks/useTypingCapture';
+import { DocumentVerifier } from '../ai/components/DocumentVerifier';
+import { TypingBehaviorMonitor } from '../ai/components/TypingBehaviorMonitor';
+import { AIHealthPanel } from '../ai/components/AIHealthPanel';
 
 // Server URL for serving images statically
 const SERVER_URL = 'http://localhost:5000';
@@ -36,6 +42,12 @@ const Dashboard = () => {
   // AI and System logs state placeholders
   const [aiMetric, setAiMetric] = useState(null);
   const [activeTab, setActiveTab] = useState('upload'); // upload | logs | ai
+  
+  // Keystroke dynamics capture states
+  const [typingResult, setTypingResult] = useState(null);
+  const { riskLevel, analyzing: typingAnalyzing, resetCapture, typingHandlers, submitTypingProfile } = useTypingCapture((res) => {
+    setTypingResult(res);
+  });
   
   const fileInputRef = useRef(null);
   
@@ -224,10 +236,10 @@ const Dashboard = () => {
               <h1 className="text-2xl font-bold text-white">Welcome back, {user?.email?.split('@')[0]}</h1>
               <p className="text-zinc-400 text-sm mt-1">Sovereign workspace interface. Your forensic security token is authenticated.</p>
             </div>
-            <div className="flex gap-3 mt-6">
+            <div className="flex flex-wrap gap-2.5 mt-6">
               <button 
                 onClick={() => setActiveTab('upload')}
-                className={`px-4 py-2 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
                   activeTab === 'upload' 
                     ? 'bg-indigo-600 border-indigo-650 text-white shadow-md' 
                     : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white'
@@ -236,24 +248,54 @@ const Dashboard = () => {
                 Upload Sandbox
               </button>
               <button 
+                onClick={() => setActiveTab('doc_authenticity')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
+                  activeTab === 'doc_authenticity' 
+                    ? 'bg-indigo-600 border-indigo-650 text-white shadow-md' 
+                    : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white'
+                }`}
+              >
+                Document Verification (AI)
+              </button>
+              <button 
+                onClick={() => setActiveTab('typing_test')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
+                  activeTab === 'typing_test' 
+                    ? 'bg-indigo-600 border-indigo-650 text-white shadow-md' 
+                    : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white'
+                }`}
+              >
+                Typing Behavior (AI)
+              </button>
+              <button 
+                onClick={() => setActiveTab('ai_health')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
+                  activeTab === 'ai_health' 
+                    ? 'bg-indigo-600 border-indigo-650 text-white shadow-md' 
+                    : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white'
+                }`}
+              >
+                AI Diagnostics
+              </button>
+              <button 
                 onClick={() => setActiveTab('logs')}
-                className={`px-4 py-2 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
                   activeTab === 'logs' 
                     ? 'bg-indigo-600 border-indigo-650 text-white shadow-md' 
                     : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white'
                 }`}
               >
-                Auditor Logs Placeholder
+                Auditor Logs
               </button>
               <button 
                 onClick={() => setActiveTab('ai')}
-                className={`px-4 py-2 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
                   activeTab === 'ai' 
                     ? 'bg-indigo-600 border-indigo-650 text-white shadow-md' 
                     : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white'
                 }`}
               >
-                AI Model Integration contract
+                AI Contract Specs
               </button>
             </div>
           </div>
@@ -282,6 +324,11 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Dynamic Typing Interlock Warnings */}
+        <div className="mb-4">
+          <TypingBehaviorMonitor riskLevel={riskLevel} onResolveVerification={() => resetCapture()} />
         </div>
 
         {/* Tab 1: Upload Sandbox */}
@@ -495,6 +542,99 @@ const Dashboard = () => {
 
             </div>
 
+          </div>
+        )}
+
+        {/* Tab: Document Verification */}
+        {activeTab === 'doc_authenticity' && (
+          <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-6 text-left space-y-6">
+            <DocumentVerifier />
+          </div>
+        )}
+
+        {/* Tab: Typing Behavior sandbox */}
+        {activeTab === 'typing_test' && (
+          <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-6 text-left space-y-6 animate-fadeIn">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-indigo-400" />
+                  Keystroke Dynamics Biometrics Analyzer
+                </h3>
+                <p className="text-zinc-500 text-xs mt-0.5">
+                  Type inside the sandbox field to analyze keyboard timing latencies (hold time, flight speed, trigraphs). Tests bot and human probabilities.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <div className="lg:col-span-7 space-y-4">
+                  <div className="space-y-1.5 text-left">
+                    <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Interactive Typing Testbed</label>
+                    <textarea
+                      onKeyDown={typingHandlers.onKeyDown}
+                      onKeyUp={typingHandlers.onKeyUp}
+                      onPaste={typingHandlers.onPaste}
+                      onInput={typingHandlers.onInput}
+                      placeholder="Type some text here to capture typing behavior metrics (e.g. 'The quick brown fox jumps over the lazy dog'). Autofill or pasting text will trigger bot alerts."
+                      rows={6}
+                      className="w-full bg-zinc-950 border border-zinc-800 hover:border-zinc-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 text-white rounded-xl p-4 text-sm transition-all outline-none"
+                    />
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={submitTypingProfile}
+                      disabled={typingAnalyzing}
+                      className="px-5 py-2.5 bg-indigo-650 hover:bg-indigo-600 text-white font-semibold text-xs rounded-xl shadow-md cursor-pointer disabled:opacity-50"
+                    >
+                      {typingAnalyzing ? 'Analyzing patterns...' : 'Submit Typing Profile'}
+                    </button>
+                    <button
+                      onClick={resetCapture}
+                      className="px-4 py-2.5 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white text-xs font-semibold rounded-lg cursor-pointer"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-5">
+                  {typingResult ? (
+                    <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-5 space-y-4 font-sans">
+                      <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">AI Keystroke Verdict</h4>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-zinc-550">Human Probability:</span>
+                          <span className="text-emerald-400 font-bold">{(typingResult.human_probability * 100).toFixed(1)}%</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-zinc-550">Bot Probability:</span>
+                          <span className="text-rose-450 font-bold">{(typingResult.bot_probability * 100).toFixed(1)}%</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-zinc-550">Risk Assessment:</span>
+                          <span className="font-semibold text-white">{typingResult.risk_level}</span>
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-zinc-400 border-t border-zinc-900 pt-3 leading-relaxed">
+                        <strong>AI Analysis:</strong> {typingResult.explanation}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="border border-zinc-850 border-dashed rounded-xl p-6 text-center text-zinc-600 text-xs py-12">
+                      Typing telemetry metrics will display here after submitting keystrokes.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab: AI Diagnostics status */}
+        {activeTab === 'ai_health' && (
+          <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-6 text-left space-y-6">
+            <AIHealthPanel />
           </div>
         )}
 
