@@ -1,0 +1,26 @@
+# VisiGuard AI — Python Dependencies
+# Install: pip install -r requirements.txt
+#
+# System packages also required:
+#   sudo apt install tesseract-ocr poppler-utils
+#   (or: brew install tesseract poppler  on macOS)
+
+# ── Core CV & ML ──────────────────────────────────────────────────────────────
+torch>=2.0.0
+torchvision>=0.15.0
+opencv-python>=4.8.0
+Pillow>=10.0.0
+numpy>=1.24.0
+scipy>=1.11.0
+
+# ── Visualization / Report ────────────────────────────────────────────────────
+matplotlib>=3.7.0
+
+# ── Metadata Verification (Layer 5) ──────────────────────────────────────────
+piexif>=1.1.3
+
+# ── OCR Consistency (Layer 6) ────────────────────────────────────────────────
+pytesseract>=0.3.10
+
+# ── PDF input support (optional — only needed if uploading .pdf documents) ───
+pdf2image>=1.16.0
